@@ -1,0 +1,8 @@
+export default {
+  QUEST_FEEDBACK_QUESTID: 'c-greta-feedback-workflow',
+  USER_ID: 'u-42772559-8e5f-474b-8c9e-759b68594fd8',
+  APIKEY: 'k-9090809f-12d1-46e7-8b8d-f58b987bd018',
+  TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1LTQyNzcyNTU5LThlNWYtNDc0Yi04YzllLTc1OWI2ODU5NGZkOCIsImlhdCI6MTc1MTM4MDY2NiwiZXhwIjoxNzUzOTcyNjY2fQ.IR_xM9r9g4wBiaIS3W_LbqtjzYfeIDPb5XZQ_hlACiA',
+  ENTITYID: 'e-8d368c3f-3085-4b50-992a-f8a026795118',
+  PRIMARY_COLOR: '#2563eb' // Extracted from your blue-600 theme
+};

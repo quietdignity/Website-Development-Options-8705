@@ -1,3 +1,4 @@
+@import '@questlabs/react-sdk/dist/style.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,4 +18,33 @@ body {
 #root {
   width: 100%;
   height: 100%;
+}
+
+/* Custom styles for feedback workflow */
+.quest-feedback-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.quest-feedback-modal {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments for feedback button */
+@media (max-width: 768px) {
+  .feedback-button-mobile {
+    right: -1px;
+    padding: 12px 8px;
+    font-size: 12px;
+  }
 }
