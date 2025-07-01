@@ -7,7 +7,6 @@ import Hero from './components/Hero';
 import WhyItMatters from './components/WhyItMatters';
 import Process from './components/Process';
 import Services from './components/Services';
-import Analytics from './components/Analytics';
 import Experience from './components/Experience';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
@@ -67,7 +66,6 @@ function App() {
                   <WhyItMatters />
                   <Process />
                   <Services />
-                  <Analytics />
                   <Experience />
                   <Contact />
                 </main>

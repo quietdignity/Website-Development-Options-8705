@@ -19,10 +19,7 @@ function Footer() {
   };
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const scrollToContact = () => {
@@ -57,8 +54,7 @@ function Footer() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              We help organizations build communication systems that reach everyone who needs them - 
-              from headquarters to frontline workers.
+              We help organizations build communication systems that reach everyone who needs them - from headquarters to frontline workers.
             </motion.p>
             <motion.div
               className="flex flex-col sm:flex-row gap-4"

@@ -89,12 +89,6 @@ function Header() {
               Services
             </button>
             <button
-              onClick={() => scrollToSection('analytics')}
-              className="text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              Analytics
-            </button>
-            <button
               onClick={() => scrollToSection('experience')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
@@ -145,12 +139,6 @@ function Header() {
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Services
-              </button>
-              <button
-                onClick={() => scrollToSection('analytics')}
-                className="text-left text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                Analytics
               </button>
               <button
                 onClick={() => scrollToSection('experience')}
