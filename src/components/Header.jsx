@@ -13,7 +13,7 @@ function Header() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -89,6 +89,12 @@ function Header() {
               Services
             </button>
             <button
+              onClick={() => scrollToSection('faq')}
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              FAQ
+            </button>
+            <button
               onClick={() => scrollToSection('experience')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
@@ -139,6 +145,12 @@ function Header() {
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Services
+              </button>
+              <button
+                onClick={() => scrollToSection('faq')}
+                className="text-left text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                FAQ
               </button>
               <button
                 onClick={() => scrollToSection('experience')}

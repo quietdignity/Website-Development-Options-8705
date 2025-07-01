@@ -7,11 +7,11 @@ import Hero from './components/Hero';
 import WhyItMatters from './components/WhyItMatters';
 import Process from './components/Process';
 import Services from './components/Services';
+import FAQ from './components/FAQ';
 import Experience from './components/Experience';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import StickyBar from './components/StickyBar';
-import Chatbot from './components/Chatbot';
 import FeedbackButton from './components/FeedbackButton';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
@@ -20,7 +20,7 @@ import questConfig from './config/questConfig';
 
 function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  
+
   // Initialize page tracking
   usePageTracking();
 
@@ -35,9 +35,9 @@ function App() {
   };
 
   return (
-    <QuestProvider 
-      apiKey={questConfig.APIKEY} 
-      entityId={questConfig.ENTITYID} 
+    <QuestProvider
+      apiKey={questConfig.APIKEY}
+      entityId={questConfig.ENTITYID}
       apiType="PRODUCTION"
     >
       <Router>
@@ -53,7 +53,7 @@ function App() {
               )
             } 
           />
-          
+
           {/* Main Website Route */}
           <Route 
             path="/*" 
@@ -66,11 +66,11 @@ function App() {
                   <WhyItMatters />
                   <Process />
                   <Services />
+                  <FAQ />
                   <Experience />
                   <Contact />
                 </main>
                 <Footer />
-                <Chatbot />
                 <FeedbackButton />
               </div>
             } 

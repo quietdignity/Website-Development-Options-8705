@@ -114,6 +114,12 @@ function Footer() {
                 Services
               </button>
               <button
+                onClick={() => scrollToSection('faq')}
+                className="block text-gray-300 hover:text-white transition-colors"
+              >
+                FAQ
+              </button>
+              <button
                 onClick={() => scrollToSection('experience')}
                 className="block text-gray-300 hover:text-white transition-colors"
               >

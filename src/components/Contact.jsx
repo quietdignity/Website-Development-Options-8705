@@ -29,11 +29,22 @@ function Contact() {
     setIsSubmitting(true);
     setSubmitError('');
 
+    // Validate form data
+    if (!formData.inquiryType || !formData.firstName || !formData.lastName || 
+        !formData.title || !formData.company || !formData.phone || 
+        !formData.email || !formData.message) {
+      setSubmitError('Please fill in all required fields.');
+      setIsSubmitting(false);
+      return;
+    }
+
     // Track form submission attempt
     trackFormSubmission('contact_form', 'contact_section');
 
     try {
-      // Try to save to Supabase first
+      console.log('Submitting form data:', formData);
+
+      // Save to Supabase
       const { data, error } = await supabase
         .from('contacts_wm2025')
         .insert([
@@ -47,14 +58,17 @@ function Contact() {
             email: formData.email,
             message: formData.message
           }
-        ]);
+        ])
+        .select();
+
+      console.log('Supabase response:', { data, error });
 
       if (error) {
-        console.log('Supabase error, falling back to mailto:', error);
-        // Fall back to mailto
-        handleMailtoFallback();
+        console.error('Supabase error details:', error);
+        setSubmitError(`Submission failed: ${error.message || 'Please try again or contact us directly.'}`);
       } else {
-        // Success with Supabase
+        console.log('Form submitted successfully:', data);
+        // Success
         setIsSubmitted(true);
         trackFormSubmission('contact_form_success', 'contact_section');
         
@@ -69,59 +83,23 @@ function Contact() {
           email: '',
           message: ''
         });
-        setTimeout(() => setIsSubmitted(false), 8000);
+        
+        // Hide success message after 10 seconds
+        setTimeout(() => setIsSubmitted(false), 10000);
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      handleMailtoFallback();
+      setSubmitError(`Network error: ${error.message || 'Please check your connection and try again.'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleMailtoFallback = () => {
-    // Fallback to mailto with both email addresses
-    const subject = `Workplace Mapping Inquiry: ${formData.inquiryType}`;
-    const body = `
-Inquiry Type: ${formData.inquiryType}
-Name: ${formData.firstName} ${formData.lastName}
-Title: ${formData.title}
-Company: ${formData.company}
-Phone: ${formData.phone}
-Email: ${formData.email}
-
-Message:
-${formData.message}
-
----
-This message was sent from the Workplace Mapping contact form.
-Please respond to: ${formData.email}
-    `;
-
-    // Send to both email addresses
-    const mailtoLink = `mailto:james@workplacemapping.com,team@workplacemapping.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, '_blank');
-
-    // Track mailto fallback
-    trackFormSubmission('contact_form_mailto', 'contact_section');
-    setIsSubmitted(true);
-
-    // Reset form
-    setFormData({
-      inquiryType: '',
-      firstName: '',
-      lastName: '',
-      title: '',
-      company: '',
-      phone: '',
-      email: '',
-      message: ''
-    });
-    setTimeout(() => setIsSubmitted(false), 8000);
-  };
-
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleDiscoveryCallClick = () => {
@@ -144,7 +122,7 @@ Please respond to: ${formData.email}
 
   const inquiryTypes = [
     "Schedule a Consultation",
-    "Communications Diagnostic", 
+    "Communications Diagnostic",
     "Fractional Internal Communications Strategist",
     "Complete Workplace Mapping",
     "Workshops & Team Training",
@@ -155,25 +133,13 @@ Please respond to: ${formData.email}
 
   return (
     <section id="contact-form" className="py-20 bg-white" ref={ref}>
-      {/* Hidden Netlify form for form detection */}
-      <form name="contact" netlify="true" netlify-honeypot="bot-field" hidden>
-        <input type="text" name="inquiryType" />
-        <input type="text" name="firstName" />
-        <input type="text" name="lastName" />
-        <input type="text" name="title" />
-        <input type="text" name="company" />
-        <input type="text" name="phone" />
-        <input type="email" name="email" />
-        <textarea name="message"></textarea>
-      </form>
-
       <div className="container mx-auto px-6">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
-          <motion.h2
+          <motion.h2 
             variants={itemVariants}
             className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-8"
           >
@@ -218,6 +184,7 @@ Please respond to: ${formData.email}
               {/* Contact Information */}
               <motion.div variants={itemVariants} className="lg:col-span-1">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Get In Touch</h3>
+                
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
@@ -225,13 +192,7 @@ Please respond to: ${formData.email}
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Email</h4>
-                      <a 
-                        href="mailto:james@workplacemapping.com"
-                        className="text-blue-600 hover:underline"
-                        onClick={() => trackButtonClick('email_link', 'contact_section')}
-                      >
-                        james@workplacemapping.com
-                      </a>
+                      <span className="text-blue-600">james@workplacemapping.com</span>
                     </div>
                   </div>
 
@@ -242,8 +203,8 @@ Please respond to: ${formData.email}
                     <div>
                       <h4 className="font-semibold text-gray-900">Schedule a Call</h4>
                       <a 
-                        href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation"
-                        target="_blank"
+                        href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation" 
+                        target="_blank" 
                         rel="noopener noreferrer"
                         className="text-green-600 hover:underline"
                         onClick={handleDiscoveryCallClick}
@@ -257,17 +218,6 @@ Please respond to: ${formData.email}
                 <div className="mt-8 p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-2">Response Time</h4>
                   <p className="text-gray-700">We'll respond to your inquiry within 24 hours.</p>
-                </div>
-
-                {/* Supabase Status Indicator */}
-                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <SafeIcon icon={FiCheckCircle} className="h-5 w-5 text-green-600" />
-                    <h4 className="font-semibold text-green-900">Backend Connected</h4>
-                  </div>
-                  <p className="text-green-800 text-sm">
-                    Form submissions are saved securely to our database with automatic email notifications.
-                  </p>
                 </div>
               </motion.div>
 
@@ -283,30 +233,42 @@ Please respond to: ${formData.email}
                       animate={{ opacity: 1, scale: 1 }}
                     >
                       <SafeIcon icon={FiCheckCircle} className="h-6 w-6 text-green-600" />
-                      <span className="text-green-800 font-medium">
-                        Thank you for your inquiry! We'll respond within 24 hours.
-                      </span>
+                      <div>
+                        <span className="text-green-800 font-medium block">
+                          Thank you for your inquiry!
+                        </span>
+                        <span className="text-green-700 text-sm">
+                          We've received your message and will respond within 24 hours.
+                        </span>
+                      </div>
                     </motion.div>
                   )}
 
                   {submitError && (
                     <motion.div
-                      className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg flex items-center gap-3"
+                      className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg flex items-start gap-3"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                     >
-                      <SafeIcon icon={FiAlertCircle} className="h-6 w-6 text-red-600" />
-                      <span className="text-red-800 font-medium">
-                        {submitError}
-                      </span>
+                      <SafeIcon icon={FiAlertCircle} className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-red-800 font-medium block mb-1">
+                          Submission Error
+                        </span>
+                        <span className="text-red-700 text-sm">
+                          {submitError}
+                        </span>
+                        <div className="mt-2 text-sm text-red-600">
+                          Alternative: Email us directly at{' '}
+                          <a href="mailto:james@workplacemapping.com" className="underline">
+                            james@workplacemapping.com
+                          </a>
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    <div hidden>
-                      <input name="bot-field" />
-                    </div>
-
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Inquiry Type *
