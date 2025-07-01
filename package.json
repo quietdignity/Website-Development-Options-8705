@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "npm run lint && vite build",
     "lint": "eslint .",
-    "lint:error": "eslint . --quiet",
     "preview": "vite preview"
   },
   "dependencies": {

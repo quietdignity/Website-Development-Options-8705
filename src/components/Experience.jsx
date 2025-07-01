@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { trackButtonClick, trackExternalLink } from '../utils/analytics';
 
 const { FiAward, FiMic, FiUsers, FiExternalLink } = FiIcons;
 
@@ -10,6 +11,7 @@ function Experience() {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
   const scrollToContact = () => {
+    trackButtonClick('Book James to Speak', 'experience_section');
     const element = document.getElementById('contact-form');
     if (element) {
       const headerHeight = 80;
@@ -19,6 +21,10 @@ function Experience() {
         behavior: 'smooth'
       });
     }
+  };
+
+  const handleConferenceClick = (conferenceName, url) => {
+    trackExternalLink(url, conferenceName);
   };
 
   const containerVariants = {
@@ -82,10 +88,7 @@ function Experience() {
             {/* Main Description */}
             <motion.div variants={itemVariants} className="text-center mb-16">
               <p className="text-xl text-gray-700 leading-relaxed max-w-4xl mx-auto">
-                Workplace Mapping was developed by award winning journalist James A. Brown. Our unique 
-                approach is based on 20 years in marketing, journalism, web development, change management, 
-                crisis communications, and managing internal and employee messaging for thousands of distributed 
-                employees across government, private, and non-profit sectors.
+                Workplace Mapping was developed by award winning journalist James A. Brown. Our unique approach is based on 20 years in marketing, journalism, web development, change management, crisis communications, and managing internal and employee messaging for thousands of distributed employees across government, private, and non-profit sectors.
               </p>
             </motion.div>
 
@@ -131,19 +134,18 @@ function Experience() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                
+
                 {/* Speaker Title */}
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">Featured Speaker</h3>
-                
+
                 {/* NAME - PROPERLY CENTERED */}
                 <div className="w-full flex justify-center mb-6">
                   <p className="text-2xl font-bold text-purple-600">James A. Brown</p>
                 </div>
-                
+
                 {/* Description */}
                 <p className="text-lg text-gray-700 max-w-3xl leading-relaxed mb-12">
-                  James has been a featured speaker at Advanced Learning Institute's premier employee communications conferences, 
-                  sharing insights on the future of workforce communication and distributed team management.
+                  James has been a featured speaker at Advanced Learning Institute's premier employee communications conferences, sharing insights on the future of workforce communication and distributed team management.
                 </p>
               </div>
 
@@ -157,6 +159,7 @@ function Experience() {
                       href={conference.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => handleConferenceClick(conference.name, conference.url)}
                       className="block bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 hover:from-blue-100 hover:to-purple-100 transition-all duration-300 group border border-blue-100"
                       whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}

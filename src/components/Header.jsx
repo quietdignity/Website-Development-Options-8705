@@ -13,7 +13,7 @@ function Header() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -21,10 +21,8 @@ function Header() {
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      // Calculate offset to account for fixed header
       const headerHeight = 80;
       const elementPosition = element.offsetTop - headerHeight;
-      
       window.scrollTo({
         top: elementPosition,
         behavior: 'smooth'
@@ -43,7 +41,6 @@ function Header() {
     if (element) {
       const headerHeight = 80;
       const elementPosition = element.offsetTop - headerHeight;
-      
       window.scrollTo({
         top: elementPosition,
         behavior: 'smooth'
@@ -53,7 +50,7 @@ function Header() {
   };
 
   return (
-    <motion.header 
+    <motion.header
       className={`fixed top-12 left-0 right-0 z-30 transition-all duration-300 ${
         isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
       }`}
@@ -73,25 +70,31 @@ function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <button 
+            <button
               onClick={() => scrollToSection('why-it-matters')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               Why It Matters
             </button>
-            <button 
+            <button
               onClick={() => scrollToSection('process')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               Process
             </button>
-            <button 
+            <button
               onClick={() => scrollToSection('services')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
               Services
             </button>
-            <button 
+            <button
+              onClick={() => scrollToSection('analytics')}
+              className="text-gray-700 hover:text-blue-600 transition-colors"
+            >
+              Analytics
+            </button>
+            <button
               onClick={() => scrollToSection('experience')}
               className="text-gray-700 hover:text-blue-600 transition-colors"
             >
@@ -118,32 +121,38 @@ function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <motion.div 
+          <motion.div
             className="md:hidden mt-4 py-4 bg-white rounded-lg shadow-lg"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
             <div className="flex flex-col space-y-4 px-4">
-              <button 
+              <button
                 onClick={() => scrollToSection('why-it-matters')}
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Why It Matters
               </button>
-              <button 
+              <button
                 onClick={() => scrollToSection('process')}
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Process
               </button>
-              <button 
+              <button
                 onClick={() => scrollToSection('services')}
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >
                 Services
               </button>
-              <button 
+              <button
+                onClick={() => scrollToSection('analytics')}
+                className="text-left text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Analytics
+              </button>
+              <button
                 onClick={() => scrollToSection('experience')}
                 className="text-left text-gray-700 hover:text-blue-600 transition-colors"
               >

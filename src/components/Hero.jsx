@@ -2,11 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { trackButtonClick, trackSectionView } from '../utils/analytics';
 
 const { FiArrowRight, FiCalendar } = FiIcons;
 
 function Hero() {
   const scrollToContact = () => {
+    trackButtonClick('get_diagnostic', 'hero_section');
     const element = document.getElementById('contact-form');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -14,6 +16,7 @@ function Hero() {
   };
 
   const scrollToWhy = () => {
+    trackSectionView('why_it_matters');
     const element = document.getElementById('why-it-matters');
     if (element) {
       const headerHeight = 80;
@@ -23,6 +26,11 @@ function Hero() {
         behavior: 'smooth'
       });
     }
+  };
+
+  const handleContactClick = () => {
+    trackButtonClick('contact_us', 'hero_section');
+    scrollToContact();
   };
 
   return (
@@ -45,10 +53,7 @@ function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Critical updates reach your office team but get lost before they reach people working 
-            on factory floors, in retail stores, and at customer sites. We trace how information 
-            actually moves through your organization, then work with you to build communication 
-            systems that reach everyone who needs them.
+            Critical updates reach your office team but get lost before they reach people working on factory floors, in retail stores, and at customer sites. We trace how information actually moves through your organization, then work with you to build communication systems that reach everyone who needs them.
           </motion.p>
 
           <motion.div
@@ -68,7 +73,7 @@ function Hero() {
             </motion.button>
 
             <motion.button
-              onClick={scrollToContact}
+              onClick={handleContactClick}
               className="bg-transparent border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-2"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

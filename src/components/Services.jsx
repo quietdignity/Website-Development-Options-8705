@@ -3,20 +3,24 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { trackButtonClick } from '../utils/analytics';
 
 const { FiDollarSign } = FiIcons;
 
 function Services() {
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1
-  });
+  const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
 
   const scrollToContact = () => {
+    trackButtonClick('Contact for Quote', 'services_section');
     const element = document.getElementById('contact-form');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleAvailabilityClick = () => {
+    trackButtonClick('Learn More About Availability', 'services_section');
+    scrollToContact();
   };
 
   const services = [
@@ -57,21 +61,12 @@ function Services() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6 }
-    }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
   };
 
   return (
@@ -82,7 +77,7 @@ function Services() {
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
-          <motion.h2 
+          <motion.h2
             variants={itemVariants}
             className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16"
           >
@@ -101,13 +96,12 @@ function Services() {
                 >
                   {/* Service Image */}
                   <div className="h-48 overflow-hidden">
-                    <img 
-                      src={service.image} 
+                    <img
+                      src={service.image}
                       alt={service.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
-
                   <div className="p-8">
                     <div className="text-center mb-6">
                       <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -131,8 +125,8 @@ function Services() {
                     <motion.button
                       onClick={scrollToContact}
                       className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                        index === 0 
-                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        index === 0
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
                           : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                       }`}
                       whileHover={{ scale: 1.02 }}
@@ -146,7 +140,7 @@ function Services() {
             </div>
 
             {/* Limited Partnerships Notice */}
-            <motion.div 
+            <motion.div
               variants={itemVariants}
               className="mt-16 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-8 text-center border border-amber-200"
             >
@@ -155,7 +149,7 @@ function Services() {
                 Pricing is based on scope and complexity of your project. We work with a select number of clients to ensure dedicated attention and results.
               </p>
               <motion.button
-                onClick={scrollToContact}
+                onClick={handleAvailabilityClick}
                 className="bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

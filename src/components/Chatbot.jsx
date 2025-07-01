@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { trackButtonClick } from '../utils/analytics';
 
 const { FiMessageCircle, FiX, FiSend } = FiIcons;
 
@@ -37,13 +38,12 @@ function Chatbot() {
     Object.keys(faqData).forEach(question => {
       const words = question.split(' ');
       let score = 0;
-      
       words.forEach(word => {
         if (input.includes(word)) {
           score++;
         }
       });
-      
+
       if (score > maxScore && score > 0) {
         maxScore = score;
         bestMatch = question;
@@ -55,6 +55,8 @@ function Chatbot() {
 
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
+
+    trackButtonClick('Chatbot Send Message', 'chatbot');
 
     const userMessage = {
       id: Date.now(),
@@ -79,11 +81,16 @@ function Chatbot() {
     }
   };
 
+  const handleToggle = () => {
+    trackButtonClick(isOpen ? 'Close Chatbot' : 'Open Chatbot', 'chatbot');
+    setIsOpen(!isOpen);
+  };
+
   return (
     <>
       {/* Chatbot Toggle Button */}
       <motion.button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -114,7 +121,7 @@ function Chatbot() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleToggle}
                   className="text-blue-100 hover:text-white"
                 >
                   <SafeIcon icon={FiX} className="h-5 w-5" />

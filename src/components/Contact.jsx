@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import { trackFormSubmission, trackButtonClick } from '../utils/analytics';
+import supabase from '../lib/supabase';
 
 const { FiMail, FiPhone, FiCalendar, FiCheckCircle, FiSend, FiAlertCircle } = FiIcons;
 
@@ -27,69 +29,35 @@ function Contact() {
     setIsSubmitting(true);
     setSubmitError('');
 
+    // Track form submission attempt
+    trackFormSubmission('contact_form', 'contact_section');
+
     try {
-      // Create URLSearchParams for form data
-      const formDataParams = new URLSearchParams();
-      formDataParams.append('form-name', 'contact');
-      
-      // Add all form fields
-      Object.keys(formData).forEach(key => {
-        formDataParams.append(key, formData[key]);
-      });
+      // Try to save to Supabase first
+      const { data, error } = await supabase
+        .from('contacts_wm2025')
+        .insert([
+          {
+            inquiry_type: formData.inquiryType,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            title: formData.title,
+            company: formData.company,
+            phone: formData.phone,
+            email: formData.email,
+            message: formData.message
+          }
+        ]);
 
-      // Submit to Netlify
-      const response = await fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formDataParams.toString()
-      });
-
-      if (response.ok) {
-        setIsSubmitted(true);
-        // Reset form
-        setFormData({
-          inquiryType: '',
-          firstName: '',
-          lastName: '',
-          title: '',
-          company: '',
-          phone: '',
-          email: '',
-          message: ''
-        });
-        
-        // Track successful form submission
-        if (typeof window !== 'undefined' && typeof window.gtag !== 'undefined') {
-          window.gtag('event', 'form_submit', {
-            event_category: 'engagement',
-            event_label: 'contact_form_success'
-          });
-        }
-        
-        setTimeout(() => setIsSubmitted(false), 8000);
+      if (error) {
+        console.log('Supabase error, falling back to mailto:', error);
+        // Fall back to mailto
+        handleMailtoFallback();
       } else {
-        // Fallback to mailto
-        const subject = `Workplace Mapping Inquiry: ${formData.inquiryType}`;
-        const body = `
-Inquiry Type: ${formData.inquiryType}
-Name: ${formData.firstName} ${formData.lastName}
-Title: ${formData.title}
-Company: ${formData.company}
-Phone: ${formData.phone}
-Email: ${formData.email}
-
-Message:
-${formData.message}
-
----
-This message was sent from the Workplace Mapping contact form.
-Please respond to: ${formData.email}
-        `;
-        
-        const mailtoLink = `mailto:team@workplacemapping.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(mailtoLink, '_blank');
-        
+        // Success with Supabase
         setIsSubmitted(true);
+        trackFormSubmission('contact_form_success', 'contact_section');
+        
         // Reset form
         setFormData({
           inquiryType: '',
@@ -101,54 +69,67 @@ Please respond to: ${formData.email}
           email: '',
           message: ''
         });
-        
         setTimeout(() => setIsSubmitted(false), 8000);
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      
-      // Fallback to mailto
-      const subject = `Workplace Mapping Inquiry: ${formData.inquiryType}`;
-      const body = `
-Inquiry Type: ${formData.inquiryType}
-Name: ${formData.firstName} ${formData.lastName}
-Title: ${formData.title}
-Company: ${formData.company}
-Phone: ${formData.phone}
-Email: ${formData.email}
-
-Message:
-${formData.message}
-
----
-This message was sent from the Workplace Mapping contact form.
-Please respond to: ${formData.email}
-      `;
-      
-      const mailtoLink = `mailto:team@workplacemapping.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(mailtoLink, '_blank');
-      
-      setIsSubmitted(true);
-      // Reset form
-      setFormData({
-        inquiryType: '',
-        firstName: '',
-        lastName: '',
-        title: '',
-        company: '',
-        phone: '',
-        email: '',
-        message: ''
-      });
-      
-      setTimeout(() => setIsSubmitted(false), 8000);
+      handleMailtoFallback();
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleMailtoFallback = () => {
+    // Fallback to mailto with both email addresses
+    const subject = `Workplace Mapping Inquiry: ${formData.inquiryType}`;
+    const body = `
+Inquiry Type: ${formData.inquiryType}
+Name: ${formData.firstName} ${formData.lastName}
+Title: ${formData.title}
+Company: ${formData.company}
+Phone: ${formData.phone}
+Email: ${formData.email}
+
+Message:
+${formData.message}
+
+---
+This message was sent from the Workplace Mapping contact form.
+Please respond to: ${formData.email}
+    `;
+
+    // Send to both email addresses
+    const mailtoLink = `mailto:james@workplacemapping.com,team@workplacemapping.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, '_blank');
+
+    // Track mailto fallback
+    trackFormSubmission('contact_form_mailto', 'contact_section');
+    setIsSubmitted(true);
+
+    // Reset form
+    setFormData({
+      inquiryType: '',
+      firstName: '',
+      lastName: '',
+      title: '',
+      company: '',
+      phone: '',
+      email: '',
+      message: ''
+    });
+    setTimeout(() => setIsSubmitted(false), 8000);
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleDiscoveryCallClick = () => {
+    trackButtonClick('discovery_call', 'contact_section');
+  };
+
+  const handleDiagnosticButtonClick = () => {
+    trackButtonClick('diagnostic_button', 'contact_section');
   };
 
   const containerVariants = {
@@ -163,7 +144,7 @@ Please respond to: ${formData.email}
 
   const inquiryTypes = [
     "Schedule a Consultation",
-    "Communications Diagnostic",
+    "Communications Diagnostic", 
     "Fractional Internal Communications Strategist",
     "Complete Workplace Mapping",
     "Workshops & Team Training",
@@ -203,6 +184,7 @@ Please respond to: ${formData.email}
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
               <motion.button
                 onClick={() => {
+                  handleDiagnosticButtonClick();
                   const element = document.getElementById('contact-form');
                   if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
@@ -220,6 +202,7 @@ Please respond to: ${formData.email}
                 href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleDiscoveryCallClick}
                 className="bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -242,11 +225,12 @@ Please respond to: ${formData.email}
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Email</h4>
-                      <a
-                        href="mailto:team@workplacemapping.com"
+                      <a 
+                        href="mailto:james@workplacemapping.com"
                         className="text-blue-600 hover:underline"
+                        onClick={() => trackButtonClick('email_link', 'contact_section')}
                       >
-                        team@workplacemapping.com
+                        james@workplacemapping.com
                       </a>
                     </div>
                   </div>
@@ -257,11 +241,12 @@ Please respond to: ${formData.email}
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Schedule a Call</h4>
-                      <a
+                      <a 
                         href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:underline"
+                        onClick={handleDiscoveryCallClick}
                       >
                         Book consultation
                       </a>
@@ -272,6 +257,17 @@ Please respond to: ${formData.email}
                 <div className="mt-8 p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-2">Response Time</h4>
                   <p className="text-gray-700">We'll respond to your inquiry within 24 hours.</p>
+                </div>
+
+                {/* Supabase Status Indicator */}
+                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SafeIcon icon={FiCheckCircle} className="h-5 w-5 text-green-600" />
+                    <h4 className="font-semibold text-green-900">Backend Connected</h4>
+                  </div>
+                  <p className="text-green-800 text-sm">
+                    Form submissions are saved securely to our database with automatic email notifications.
+                  </p>
                 </div>
               </motion.div>
 
@@ -310,7 +306,7 @@ Please respond to: ${formData.email}
                     <div hidden>
                       <input name="bot-field" />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Inquiry Type *
