@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { QuestProvider } from '@questlabs/react-sdk';
 import '@questlabs/react-sdk/dist/style.css';
+
 import Header from './components/Header';
 import Hero from './components/Hero';
 import WhyItMatters from './components/WhyItMatters';
@@ -15,6 +16,7 @@ import StickyBar from './components/StickyBar';
 import FeedbackButton from './components/FeedbackButton';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
+import SEOHead from './components/SEOHead';
 import usePageTracking from './hooks/usePageTracking';
 import questConfig from './config/questConfig';
 
@@ -41,22 +43,23 @@ function App() {
       apiType="PRODUCTION"
     >
       <Router>
+        <SEOHead />
         <Routes>
           {/* Admin Route */}
-          <Route 
-            path="/admin" 
+          <Route
+            path="/admin"
             element={
               isAdminLoggedIn ? (
                 <AdminDashboard onLogout={handleAdminLogout} />
               ) : (
                 <AdminLogin onLogin={handleAdminLogin} />
               )
-            } 
+            }
           />
 
           {/* Main Website Route */}
-          <Route 
-            path="/*" 
+          <Route
+            path="/*"
             element={
               <div className="min-h-screen bg-white">
                 <StickyBar />
@@ -73,7 +76,7 @@ function App() {
                 <Footer />
                 <FeedbackButton />
               </div>
-            } 
+            }
           />
         </Routes>
       </Router>

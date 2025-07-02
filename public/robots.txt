@@ -1,9 +1,25 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Sitemap location
 Sitemap: https://workplacemapping.com/sitemap.xml
 
+# Popular crawlers
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
 Allow: /

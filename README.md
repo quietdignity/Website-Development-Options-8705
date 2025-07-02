@@ -2,30 +2,25 @@
 
 A professional website for Workplace Mapping, featuring internal communications consulting services for distributed teams and frontline workers.
 
-## Google Analytics Setup
+## Google Analytics Setup ✅ CONFIGURED
 
-This project includes Google Analytics 4 (GA4) integration. To set it up:
+This project includes Google Analytics 4 (GA4) integration with tracking ID: **G-LX0W4B0RSH**
 
-1. **Get your GA4 Measurement ID:**
-   - Go to [Google Analytics](https://analytics.google.com/)
-   - Create a new GA4 property or use an existing one
-   - Copy your Measurement ID (format: G-XXXXXXXXXX)
+### Analytics Events Tracked:
+- **Page views and navigation**
+- **Form submissions** (contact form)
+- **Button clicks** (CTA buttons, external links)
+- **Scroll depth** (25%, 50%, 75%, 100%)
+- **Time spent on page**
+- **Section views** (when sections come into view)
+- **External link clicks**
+- **File downloads**
+- **Video interactions**
 
-2. **Update the Measurement ID:**
-   - Open `index.html`
-   - Replace `GA_MEASUREMENT_ID` with your actual Measurement ID in two places:
-     - In the script src URL
-     - In the gtag config call
-   - Also update `src/utils/analytics.js` with your Measurement ID
-
-3. **Analytics Events Tracked:**
-   - Page views and navigation
-   - Form submissions (contact form)
-   - Button clicks (CTA buttons, external links)
-   - Scroll depth (25%, 50%, 75%, 100%)
-   - Time spent on page
-   - Section views
-   - External link clicks
+### Real-Time Analytics:
+- View live traffic in [Google Analytics Real-Time reports](https://analytics.google.com/)
+- All custom events are properly categorized for easy reporting
+- Enhanced ecommerce tracking ready for future conversion goals
 
 ## Features
 
@@ -34,6 +29,7 @@ This project includes Google Analytics 4 (GA4) integration. To set it up:
 - **Analytics Integration**: Google Analytics 4 with custom events
 - **Interactive Components**: Chatbot, feedback system, contact forms
 - **Performance Optimized**: Fast loading with modern React practices
+- **Supabase Backend**: Real-time contact management and analytics
 
 ## Development
 
@@ -46,28 +42,34 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Run linting
+npm run lint
 ```
 
 ## Deployment
 
 The site is configured for static deployment with:
 - Netlify form handling
-- Google Analytics tracking
+- Google Analytics tracking (G-LX0W4B0RSH)
 - SEO optimization
 - Responsive images
 
-Make sure to:
-1. Update the GA4 Measurement ID before deploying
-2. Configure your domain in Google Analytics
-3. Set up Netlify form handling if using Netlify
-4. Test all analytics events in GA4 Real-Time reports
+### Analytics Verification:
+1. ✅ GA4 tracking code installed
+2. ✅ Custom events configured
+3. ✅ Real-time tracking active
+4. ✅ Enhanced measurement enabled
 
 ## Analytics Events Reference
 
-- `form_submit`: Contact form submissions
-- `click`: Button and link clicks
-- `scroll`: Scroll depth tracking
-- `section_view`: Section visibility tracking
-- `timing_complete`: Time on page tracking
+| Event Type | Event Name | Category | Purpose |
+|------------|------------|----------|---------|
+| Form Submit | `form_submit` | engagement | Contact form submissions |
+| Button Click | `click` | engagement | CTA and navigation clicks |
+| External Link | `click` | outbound | External website visits |
+| Scroll Tracking | `scroll` | engagement | User scroll depth |
+| Section View | `section_view` | engagement | Section visibility |
+| Time Tracking | `timing_complete` | engagement | Time spent on page |
 
-All events include proper categorization for easy reporting in Google Analytics.
+All events include proper categorization for easy reporting in Google Analytics dashboard.
