@@ -43,8 +43,8 @@ function Contact() {
 
     try {
       console.log('Submitting form data:', formData);
-
-      // Save to Supabase
+      
+      // Save to Supabase with proper field mapping
       const { data, error } = await supabase
         .from('contacts_wm2025')
         .insert([
@@ -65,9 +65,18 @@ function Contact() {
 
       if (error) {
         console.error('Supabase error details:', error);
-        setSubmitError(`Submission failed: ${error.message || 'Please try again or contact us directly.'}`);
+        
+        // Handle specific RLS errors
+        if (error.code === '42501' || error.message.includes('row-level security')) {
+          setSubmitError('Database access denied. Please try again or contact us directly.');
+        } else if (error.code === '23505') {
+          setSubmitError('A submission with this email already exists. Please contact us directly.');
+        } else {
+          setSubmitError(`Submission failed: ${error.message}. Please try again or contact us directly.`);
+        }
       } else {
         console.log('Form submitted successfully:', data);
+        
         // Success
         setIsSubmitted(true);
         trackFormSubmission('contact_form_success', 'contact_section');
@@ -89,7 +98,13 @@ function Contact() {
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      setSubmitError(`Network error: ${error.message || 'Please check your connection and try again.'}`);
+      
+      // Handle network errors
+      if (error.name === 'NetworkError' || !navigator.onLine) {
+        setSubmitError('Network connection failed. Please check your internet connection and try again.');
+      } else {
+        setSubmitError(`Network error: ${error.message}. Please check your connection and try again.`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -110,14 +125,30 @@ function Contact() {
     trackButtonClick('diagnostic_button', 'contact_section');
   };
 
+  const handleContactClick = () => {
+    trackButtonClick('contact_us', 'hero_section');
+    scrollToContact();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6
+      }
+    }
   };
 
   const inquiryTypes = [
@@ -139,7 +170,7 @@ function Contact() {
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
-          <motion.h2 
+          <motion.h2
             variants={itemVariants}
             className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-8"
           >
@@ -202,9 +233,9 @@ function Contact() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Schedule a Call</h4>
-                      <a 
-                        href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation" 
-                        target="_blank" 
+                      <a
+                        href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:underline"
                         onClick={handleDiscoveryCallClick}
@@ -393,8 +424,8 @@ function Contact() {
                       type="submit"
                       disabled={isSubmitting}
                       className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center gap-2 ${
-                        isSubmitting 
-                          ? 'bg-gray-400 cursor-not-allowed' 
+                        isSubmitting
+                          ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-blue-600 hover:bg-blue-700'
                       } text-white`}
                       whileHover={!isSubmitting ? { scale: 1.02 } : {}}
