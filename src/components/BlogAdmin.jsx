@@ -13,7 +13,7 @@ function BlogAdmin() {
   const [editingPost, setEditingPost] = useState(null);
   const [showNewPost, setShowNewPost] = useState(false);
   const [saving, setSaving] = useState(false);
-
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -54,13 +54,19 @@ function BlogAdmin() {
 
       if (!postsError && postsData) {
         setPosts(postsData);
+      } else if (postsError) {
+        setError(`Error fetching posts: ${postsError.message}`);
       }
 
       if (!categoriesError && categoriesData) {
         setCategories(categoriesData);
+      } else if (categoriesError) {
+        setError(`Error fetching categories: ${categoriesError.message}`);
       }
+
     } catch (error) {
       console.error('Error fetching blog data:', error);
+      setError(`Database connection error: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -77,7 +83,7 @@ function BlogAdmin() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (name === 'title') {
       setFormData({
         ...formData,
@@ -106,11 +112,34 @@ function BlogAdmin() {
   };
 
   const handleSave = async () => {
+    setError('');
     setSaving(true);
+
     try {
+      // Validate required fields
+      if (!formData.title.trim()) {
+        throw new Error('Title is required');
+      }
+      if (!formData.content.trim()) {
+        throw new Error('Content is required');
+      }
+      if (!formData.excerpt.trim()) {
+        throw new Error('Excerpt is required');
+      }
+
       const postData = {
-        ...formData,
+        title: formData.title.trim(),
+        slug: formData.slug.trim(),
+        excerpt: formData.excerpt.trim(),
+        content: formData.content.trim(),
+        featured_image: formData.featured_image.trim() || null,
+        status: formData.status,
+        featured: formData.featured,
+        meta_title: formData.meta_title.trim() || formData.title.trim(),
+        meta_description: formData.meta_description.trim() || formData.excerpt.trim(),
+        tags: formData.tags.length > 0 ? formData.tags : null,
         read_time: parseInt(formData.read_time) || 5,
+        author_name: 'James A. Brown',
         published_at: formData.status === 'published' ? new Date().toISOString() : null
       };
 
@@ -123,6 +152,7 @@ function BlogAdmin() {
           .eq('id', editingPost.id)
           .select()
           .single();
+        
         result = { data, error };
       } else {
         // Create new post
@@ -131,11 +161,12 @@ function BlogAdmin() {
           .insert([postData])
           .select()
           .single();
+        
         result = { data, error };
       }
 
       if (result.error) {
-        throw result.error;
+        throw new Error(result.error.message);
       }
 
       // Handle category relationship
@@ -147,25 +178,30 @@ function BlogAdmin() {
           .eq('post_id', result.data.id);
 
         // Insert new relationship
-        await supabase
+        const { error: categoryError } = await supabase
           .from('blog_post_categories_wm2025')
           .insert([{
             post_id: result.data.id,
             category_id: formData.category_id
           }]);
+
+        if (categoryError) {
+          console.warn('Category relationship error:', categoryError);
+        }
       }
 
       // Refresh data
       await fetchBlogData();
-      
+
       // Reset form
       setEditingPost(null);
       setShowNewPost(false);
       resetForm();
-      
+
+      setError(''); // Clear any previous errors
     } catch (error) {
       console.error('Error saving post:', error);
-      alert('Error saving post: ' + error.message);
+      setError(error.message || 'Failed to save post');
     } finally {
       setSaving(false);
     }
@@ -203,7 +239,7 @@ function BlogAdmin() {
       await fetchBlogData();
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Error deleting post: ' + error.message);
+      setError(`Failed to delete post: ${error.message}`);
     }
   };
 
@@ -228,6 +264,7 @@ function BlogAdmin() {
     setEditingPost(null);
     setShowNewPost(false);
     resetForm();
+    setError('');
   };
 
   if (loading) {
@@ -258,6 +295,13 @@ function BlogAdmin() {
           New Post
         </motion.button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg text-red-800">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {/* New/Edit Post Form */}
       {(showNewPost || editingPost) && (
@@ -400,7 +444,7 @@ function BlogAdmin() {
                   onChange={handleInputChange}
                   rows={20}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
-                  placeholder="Write your post content in Markdown..."
+                  placeholder="Write your post content..."
                 />
               </div>
 
@@ -514,21 +558,22 @@ function BlogAdmin() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      post.status === 'published' 
-                        ? 'bg-green-100 text-green-800'
-                        : post.status === 'draft'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        post.status === 'published'
+                          ? 'bg-green-100 text-green-800'
+                          : post.status === 'draft'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {post.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {post.published_at 
+                    {post.published_at
                       ? new Date(post.published_at).toLocaleDateString()
-                      : 'Not published'
-                    }
+                      : 'Not published'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center gap-4">
