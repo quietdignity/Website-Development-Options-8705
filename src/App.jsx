@@ -8,6 +8,8 @@ import Hero from './components/Hero';
 import WhyItMatters from './components/WhyItMatters';
 import Process from './components/Process';
 import Services from './components/Services';
+import Blog from './components/Blog';
+import BlogPost from './components/BlogPost';
 import FAQ from './components/FAQ';
 import Experience from './components/Experience';
 import Contact from './components/Contact';
@@ -16,12 +18,14 @@ import StickyBar from './components/StickyBar';
 import FeedbackButton from './components/FeedbackButton';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
+import BlogAdmin from './components/BlogAdmin';
 import SEOHead from './components/SEOHead';
 import usePageTracking from './hooks/usePageTracking';
 import questConfig from './config/questConfig';
 
 function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminView, setAdminView] = useState('dashboard');
 
   // Initialize page tracking
   usePageTracking();
@@ -34,6 +38,7 @@ function App() {
   // Admin logout handler
   const handleAdminLogout = () => {
     setIsAdminLoggedIn(false);
+    setAdminView('dashboard');
   };
 
   return (
@@ -45,39 +50,85 @@ function App() {
       <Router>
         <SEOHead />
         <Routes>
+          {/* Individual Blog Post Route */}
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          
           {/* Admin Route */}
-          <Route
-            path="/admin"
-            element={
-              isAdminLoggedIn ? (
-                <AdminDashboard onLogout={handleAdminLogout} />
-              ) : (
-                <AdminLogin onLogin={handleAdminLogin} />
-              )
-            }
-          />
+          <Route path="/admin" element={
+            isAdminLoggedIn ? (
+              <div className="min-h-screen bg-gray-50">
+                {/* Admin Header */}
+                <header className="bg-white shadow-sm border-b border-gray-200">
+                  <div className="container mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-8">
+                        <h1 className="text-2xl font-bold text-gray-900">
+                          Workplace Mapping Admin
+                        </h1>
+                        <nav className="flex gap-6">
+                          <button
+                            onClick={() => setAdminView('dashboard')}
+                            className={`px-4 py-2 rounded-lg transition-colors ${
+                              adminView === 'dashboard'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'text-gray-600 hover:text-blue-600'
+                            }`}
+                          >
+                            Dashboard
+                          </button>
+                          <button
+                            onClick={() => setAdminView('blog')}
+                            className={`px-4 py-2 rounded-lg transition-colors ${
+                              adminView === 'blog'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'text-gray-600 hover:text-blue-600'
+                            }`}
+                          >
+                            Blog Management
+                          </button>
+                        </nav>
+                      </div>
+                      <button
+                        onClick={handleAdminLogout}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </header>
+
+                {/* Admin Content */}
+                {adminView === 'dashboard' ? (
+                  <AdminDashboard onLogout={handleAdminLogout} />
+                ) : (
+                  <BlogAdmin />
+                )}
+              </div>
+            ) : (
+              <AdminLogin onLogin={handleAdminLogin} />
+            )
+          } />
 
           {/* Main Website Route */}
-          <Route
-            path="/*"
-            element={
-              <div className="min-h-screen bg-white">
-                <StickyBar />
-                <Header />
-                <main>
-                  <Hero />
-                  <WhyItMatters />
-                  <Process />
-                  <Services />
-                  <FAQ />
-                  <Experience />
-                  <Contact />
-                </main>
-                <Footer />
-                <FeedbackButton />
-              </div>
-            }
-          />
+          <Route path="/*" element={
+            <div className="min-h-screen bg-white">
+              <StickyBar />
+              <Header />
+              <main>
+                <Hero />
+                <WhyItMatters />
+                <Process />
+                <Services />
+                <Blog />
+                <FAQ />
+                <Experience />
+                <Contact />
+              </main>
+              <Footer />
+              <FeedbackButton />
+            </div>
+          } />
         </Routes>
       </Router>
     </QuestProvider>

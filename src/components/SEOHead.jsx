@@ -3,11 +3,23 @@ import { useLocation } from 'react-router-dom';
 
 function SEOHead() {
   const location = useLocation();
-  
+
   // Generate page-specific meta data
   const getPageMeta = () => {
     const hash = location.hash;
-    
+    const pathname = location.pathname;
+
+    // Handle blog post pages
+    if (pathname.startsWith('/blog/')) {
+      const slug = pathname.replace('/blog/', '');
+      return {
+        title: `${slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} | Workplace Mapping Blog`,
+        description: 'Expert insights on workplace communication, distributed teams, and building systems that reach everyone who needs them.',
+        canonical: `https://workplacemapping.com${pathname}`
+      };
+    }
+
+    // Handle hash-based navigation
     switch(hash) {
       case '#why-it-matters':
         return {
@@ -26,6 +38,12 @@ function SEOHead() {
           title: 'Services - Communication Consulting Options | Workplace Mapping',
           description: '20-Day Diagnostic, Fractional Strategist, and Infrastructure Rebuild services for distributed teams and frontline workers.',
           canonical: 'https://workplacemapping.com/#services'
+        };
+      case '#blog':
+        return {
+          title: 'Communication Blog - Expert Insights | Workplace Mapping',
+          description: 'Expert insights on workplace communication, distributed teams, and building systems that reach everyone who needs them.',
+          canonical: 'https://workplacemapping.com/#blog'
         };
       case '#experience':
         return {
@@ -53,13 +71,13 @@ function SEOHead() {
   React.useEffect(() => {
     // Update document title
     document.title = pageMeta.title;
-    
+
     // Update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute('content', pageMeta.description);
     }
-    
+
     // Update canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
@@ -68,24 +86,24 @@ function SEOHead() {
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.href = pageMeta.canonical;
-    
+
     // Update Open Graph tags
     const ogTitle = document.querySelector('meta[property="og:title"]');
     const ogDescription = document.querySelector('meta[property="og:description"]');
     const ogUrl = document.querySelector('meta[property="og:url"]');
-    
+
     if (ogTitle) ogTitle.setAttribute('content', pageMeta.title);
     if (ogDescription) ogDescription.setAttribute('content', pageMeta.description);
     if (ogUrl) ogUrl.setAttribute('content', pageMeta.canonical);
-    
+
     // Update Twitter tags
     const twitterTitle = document.querySelector('meta[name="twitter:title"]');
     const twitterDescription = document.querySelector('meta[name="twitter:description"]');
-    
+
     if (twitterTitle) twitterTitle.setAttribute('content', pageMeta.title);
     if (twitterDescription) twitterDescription.setAttribute('content', pageMeta.description);
-    
-  }, [location.hash, pageMeta]);
+
+  }, [location.hash, location.pathname, pageMeta]);
 
   return null; // This component doesn't render anything
 }
