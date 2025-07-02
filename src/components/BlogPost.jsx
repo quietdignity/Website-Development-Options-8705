@@ -5,6 +5,8 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import Header from './Header';
 import Footer from './Footer';
+import CommentSection from './CommentSection';
+import Contact from './Contact';
 import supabase from '../lib/supabase';
 
 const { FiArrowLeft, FiCalendar, FiClock, FiUser, FiTag, FiEye, FiShare2, FiMessageSquare } = FiIcons;
@@ -66,7 +68,6 @@ function BlogPost() {
       if (relatedData) {
         setRelatedPosts(relatedData);
       }
-
     } catch (error) {
       console.error('Error fetching post:', error);
       setError('Error loading post');
@@ -80,7 +81,7 @@ function BlogPost() {
       navigator.share({
         title: post.title,
         text: post.excerpt,
-        url: window.location.href,
+        url: window.location.href
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
@@ -89,7 +90,10 @@ function BlogPost() {
   };
 
   const scrollToContact = () => {
-    navigate('/#contact-form');
+    const element = document.getElementById('contact-form');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const formatDate = (dateString) => {
@@ -117,7 +121,7 @@ function BlogPost() {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="pt-32 pb-20">
+        <div className="pt-24 pb-20">
           <div className="container mx-auto px-6">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -134,7 +138,7 @@ function BlogPost() {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="pt-32 pb-20">
+        <div className="pt-24 pb-20">
           <div className="container mx-auto px-6">
             <div className="text-center">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">Article Not Found</h1>
@@ -160,12 +164,11 @@ function BlogPost() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       {/* Article Header */}
-      <article className="pt-32 pb-20">
+      <article className="pt-24 pb-20">
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
-            
             {/* Back Button */}
             <motion.button
               onClick={() => navigate('/#blog')}
@@ -263,9 +266,7 @@ function BlogPost() {
             >
               <div
                 className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: `<p>${renderContent(post.content)}</p>`
-                }}
+                dangerouslySetInnerHTML={{ __html: `<p>${renderContent(post.content)}</p>` }}
               />
             </motion.div>
 
@@ -378,6 +379,12 @@ function BlogPost() {
           </div>
         </div>
       </article>
+
+      {/* Comment Section */}
+      <CommentSection postId={post.id} postTitle={post.title} />
+
+      {/* Contact Form Section */}
+      <Contact />
 
       <Footer />
     </div>

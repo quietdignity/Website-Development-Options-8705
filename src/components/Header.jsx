@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 
@@ -8,52 +9,94 @@ const { FiMenu, FiX } = FiIcons;
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [stickyBarVisible, setStickyBarVisible] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Check if we're on a blog post page
+  const isBlogPost = location.pathname.startsWith('/blog/');
+  const isHomePage = location.pathname === '/' || location.pathname === '';
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 50);
+      setStickyBarVisible(scrollY > 600 && !isBlogPost);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isBlogPost]);
 
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const headerHeight = 80;
-      const elementPosition = element.offsetTop - headerHeight;
-      window.scrollTo({
-        top: elementPosition,
-        behavior: 'smooth'
-      });
-      setIsMenuOpen(false);
+    setIsMenuOpen(false);
+    
+    if (isHomePage) {
+      // We're on home page, scroll to section
+      const element = document.getElementById(sectionId);
+      if (element) {
+        const headerHeight = 80;
+        const elementPosition = element.offsetTop - headerHeight;
+        window.scrollTo({
+          top: elementPosition,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      // We're on another page, navigate to home page with hash
+      navigate(`/#${sectionId}`);
     }
   };
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsMenuOpen(false);
+    
+    if (isHomePage) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+    }
   };
 
   const scrollToContact = () => {
-    const element = document.getElementById('contact-form');
-    if (element) {
-      const headerHeight = 80;
-      const elementPosition = element.offsetTop - headerHeight;
-      window.scrollTo({
-        top: elementPosition,
-        behavior: 'smooth'
-      });
-      setIsMenuOpen(false);
+    setIsMenuOpen(false);
+    
+    if (isBlogPost) {
+      // Scroll to contact form on current blog page
+      const element = document.getElementById('contact-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
     }
+    
+    if (isHomePage) {
+      // We're on home page, scroll to contact
+      const element = document.getElementById('contact-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Navigate to home page contact form
+      navigate('/#contact-form');
+    }
+  };
+
+  // Calculate top position based on sticky bar visibility
+  const getTopPosition = () => {
+    if (isBlogPost) return 'top-0';
+    if (isScrolled && stickyBarVisible) return 'top-[52px]';
+    if (isScrolled) return 'top-0';
+    return 'top-12';
   };
 
   return (
     <motion.header
-      className={`fixed top-12 left-0 right-0 z-30 transition-all duration-300 ${
-        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
-      }`}
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled || isBlogPost 
+          ? 'bg-white/95 backdrop-blur-md shadow-lg' 
+          : 'bg-transparent'
+      } ${getTopPosition()}`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6 }}
