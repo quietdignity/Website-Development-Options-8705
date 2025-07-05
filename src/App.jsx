@@ -2,44 +2,116 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { QuestProvider } from '@questlabs/react-sdk';
 import '@questlabs/react-sdk/dist/style.css';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import WhyItMatters from './components/WhyItMatters';
-import Process from './components/Process';
-import Services from './components/Services';
-import Blog from './components/Blog';
-import BlogPost from './components/BlogPost';
-import FAQ from './components/FAQ';
-import Experience from './components/Experience';
-import Contact from './components/Contact';
-import Footer from './components/Footer';
-import StickyBar from './components/StickyBar';
-import FeedbackButton from './components/FeedbackButton';
-import AdminLogin from './components/AdminLogin';
-import AdminDashboard from './components/AdminDashboard';
-import BlogAdmin from './components/BlogAdmin';
-import CommentAdmin from './components/CommentAdmin';
-import SEOHead from './components/SEOHead';
-import usePageTracking from './hooks/usePageTracking';
-import questConfig from './config/questConfig';
+import { Header, Footer, StickyBar, FeedbackButton } from './components/Layout.jsx';
+import { Hero, WhyItMatters, Process, Services, Experience } from './components/HomePageSections.jsx';
+import Contact from './components/Contact.jsx';
+import { questConfig } from './utils/common.jsx';
 
-// Component to handle hash scrolling on home page
+// SEO Head Component
+function SEOHead() {
+  const location = useLocation();
+
+  const getPageMeta = () => {
+    const hash = location.hash;
+    const pathname = location.pathname;
+
+    if (pathname.startsWith('/blog/')) {
+      const slug = pathname.replace('/blog/', '');
+      return {
+        title: `${slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} | Workplace Mapping Blog`,
+        description: 'Expert insights on workplace communication, distributed teams, and building systems that reach everyone who needs them.',
+        canonical: `https://workplacemapping.com${pathname}`
+      };
+    }
+
+    switch(hash) {
+      case '#why-it-matters':
+        return {
+          title: 'Why Workplace Mapping Matters - Communication Gaps | Workplace Mapping',
+          description: 'Safety alerts and critical updates can stall or get lost. Learn why frontline workers miss important information and how to fix communication gaps.',
+          canonical: 'https://workplacemapping.com/#why-it-matters'
+        };
+      case '#process':
+        return {
+          title: 'Our Process - Workplace Mapping Methodology | 4-Step System',
+          description: 'Discover, Analyze, Design, and Sustain. Our four-step process maps communication gaps and builds systems that reach everyone.',
+          canonical: 'https://workplacemapping.com/#process'
+        };
+      case '#services':
+        return {
+          title: 'Services - Communication Consulting Options | Workplace Mapping',
+          description: '20-Day Diagnostic, Fractional Strategist, and Infrastructure Rebuild services for distributed teams and frontline workers.',
+          canonical: 'https://workplacemapping.com/#services'
+        };
+      case '#experience':
+        return {
+          title: 'Experience - James A. Brown Communications Expert | 20+ Years',
+          description: 'Award-winning journalist with 20 years managing communications for thousands of distributed employees across multiple sectors.',
+          canonical: 'https://workplacemapping.com/#experience'
+        };
+      case '#contact-form':
+        return {
+          title: 'Contact - Get Your Communication Diagnostic | Workplace Mapping',
+          description: 'Schedule a consultation or get your 20-day communication diagnostic. Stop losing critical information in communication gaps.',
+          canonical: 'https://workplacemapping.com/#contact-form'
+        };
+      default:
+        return {
+          title: 'Workplace Mapping - Internal Communications Consulting for Distributed Teams',
+          description: 'Help your frontline, deskless, and virtual employees receive critical updates. We map communication gaps and build systems that reach everyone who needs them.',
+          canonical: 'https://workplacemapping.com'
+        };
+    }
+  };
+
+  const pageMeta = getPageMeta();
+
+  useEffect(() => {
+    document.title = pageMeta.title;
+    
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', pageMeta.description);
+    }
+
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = 'canonical';
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.href = pageMeta.canonical;
+
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    
+    if (ogTitle) ogTitle.setAttribute('content', pageMeta.title);
+    if (ogDescription) ogDescription.setAttribute('content', pageMeta.description);
+    if (ogUrl) ogUrl.setAttribute('content', pageMeta.canonical);
+
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    const twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    
+    if (twitterTitle) twitterTitle.setAttribute('content', pageMeta.title);
+    if (twitterDescription) twitterDescription.setAttribute('content', pageMeta.description);
+  }, [location.hash, location.pathname, pageMeta]);
+
+  return null;
+}
+
+// HomePage Component
 function HomePage() {
   const location = useLocation();
 
   useEffect(() => {
-    // Handle hash-based scrolling when landing on home page with hash
     if (location.hash) {
       const element = document.getElementById(location.hash.slice(1));
       if (element) {
-        // Small delay to ensure page is fully loaded
         setTimeout(() => {
           const headerHeight = 80;
           const elementPosition = element.offsetTop - headerHeight;
-          window.scrollTo({
-            top: elementPosition,
-            behavior: 'smooth'
-          });
+          window.scrollTo({ top: elementPosition, behavior: 'smooth' });
         }, 100);
       }
     }
@@ -54,8 +126,6 @@ function HomePage() {
         <WhyItMatters />
         <Process />
         <Services />
-        <Blog />
-        <FAQ />
         <Experience />
         <Contact />
       </main>
@@ -66,23 +136,6 @@ function HomePage() {
 }
 
 function App() {
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminView, setAdminView] = useState('dashboard');
-
-  // Initialize page tracking
-  usePageTracking();
-
-  // Admin login handler
-  const handleAdminLogin = () => {
-    setIsAdminLoggedIn(true);
-  };
-
-  // Admin logout handler
-  const handleAdminLogout = () => {
-    setIsAdminLoggedIn(false);
-    setAdminView('dashboard');
-  };
-
   return (
     <QuestProvider
       apiKey={questConfig.APIKEY}
@@ -92,78 +145,6 @@ function App() {
       <Router>
         <SEOHead />
         <Routes>
-          {/* Individual Blog Post Route */}
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          
-          {/* Admin Route */}
-          <Route 
-            path="/admin" 
-            element={
-              isAdminLoggedIn ? (
-                <div className="min-h-screen bg-gray-50">
-                  {/* Admin Header */}
-                  <header className="bg-white shadow-sm border-b border-gray-200">
-                    <div className="container mx-auto px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-8">
-                          <h1 className="text-2xl font-bold text-gray-900">
-                            Workplace Mapping Admin
-                          </h1>
-                          <nav className="flex gap-6">
-                            <button
-                              onClick={() => setAdminView('dashboard')}
-                              className={`px-4 py-2 rounded-lg transition-colors ${
-                                adminView === 'dashboard'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'text-gray-600 hover:text-blue-600'
-                              }`}
-                            >
-                              Dashboard
-                            </button>
-                            <button
-                              onClick={() => setAdminView('blog')}
-                              className={`px-4 py-2 rounded-lg transition-colors ${
-                                adminView === 'blog'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'text-gray-600 hover:text-blue-600'
-                              }`}
-                            >
-                              Blog Management
-                            </button>
-                            <button
-                              onClick={() => setAdminView('comments')}
-                              className={`px-4 py-2 rounded-lg transition-colors ${
-                                adminView === 'comments'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'text-gray-600 hover:text-blue-600'
-                              }`}
-                            >
-                              Comments
-                            </button>
-                          </nav>
-                        </div>
-                        <button
-                          onClick={handleAdminLogout}
-                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    </div>
-                  </header>
-
-                  {/* Admin Content */}
-                  {adminView === 'dashboard' && <AdminDashboard onLogout={handleAdminLogout} />}
-                  {adminView === 'blog' && <BlogAdmin />}
-                  {adminView === 'comments' && <CommentAdmin />}
-                </div>
-              ) : (
-                <AdminLogin onLogin={handleAdminLogin} />
-              )
-            }
-          />
-          
-          {/* Main Website Route */}
           <Route path="/*" element={<HomePage />} />
         </Routes>
       </Router>

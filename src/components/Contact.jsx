@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import * as FiIcons from 'react-icons/fi';
-import SafeIcon from '../common/SafeIcon';
-import { trackFormSubmission, trackButtonClick } from '../utils/analytics';
+import { SafeIcon, trackFormSubmission, trackButtonClick } from '../utils/common.jsx';
 import supabase from '../lib/supabase';
+import * as FiIcons from 'react-icons/fi';
 
 const { FiMail, FiPhone, FiCalendar, FiCheckCircle, FiSend, FiAlertCircle } = FiIcons;
 
@@ -29,7 +28,7 @@ function Contact() {
     setIsSubmitting(true);
     setSubmitError('');
 
-    // Validate form data
+    // Validate required fields
     if (!formData.inquiryType || !formData.firstName || !formData.lastName || 
         !formData.title || !formData.company || !formData.phone || 
         !formData.email || !formData.message) {
@@ -38,11 +37,55 @@ function Contact() {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setSubmitError('Please enter a valid email address.');
+      setIsSubmitting(false);
+      return;
+    }
+
     trackFormSubmission('contact_form', 'contact_section');
 
     try {
-      console.log('🚀 Submitting contact form...');
+      console.log('Starting form submission...');
       
+      // Create contact data object
+      const contactData = {
+        inquiry_type: formData.inquiryType,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        title: formData.title,
+        company: formData.company,
+        phone: formData.phone,
+        email: formData.email,
+        message: formData.message,
+        created_at: new Date().toISOString()
+      };
+
+      console.log('Contact data:', contactData);
+
+      // Try to save to Supabase database first
+      let databaseSaved = false;
+      try {
+        console.log('Attempting to save to Supabase...');
+        const { data, error } = await supabase
+          .from('contacts_wm2025')
+          .insert([contactData])
+          .select();
+        
+        if (error) {
+          console.error('Supabase error:', error);
+        } else {
+          console.log('Successfully saved to database:', data);
+          databaseSaved = true;
+        }
+      } catch (dbError) {
+        console.error('Database save failed:', dbError);
+      }
+
+      // Try to send email notifications
+      let emailSent = false;
       const emailData = {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
@@ -53,61 +96,46 @@ function Contact() {
         message: formData.message
       };
 
-      // Method 1: Try Supabase Edge Function
-      let emailSent = false;
+      // Method 1: Try Formspree (most reliable)
       try {
-        console.log('📧 Attempting Supabase email function...');
-        const response = await fetch(`https://sdfnpskccbvilzpcpzzo.supabase.co/functions/v1/send-contact-email`, {
+        console.log('Attempting Formspree...');
+        const formspreeResponse = await fetch('https://formspree.io/f/xanydvvp', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkZm5wc2tjY2J2aWx6cGNwenpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNzUyNjEsImV4cCI6MjA2Njc1MTI2MX0.dkIxMqlYhxNNWbYhiDjelZnLzpdl0OIU84T51hHCXis`,
+            'Accept': 'application/json'
           },
-          body: JSON.stringify(emailData),
+          body: JSON.stringify({
+            name: emailData.name,
+            email: emailData.email,
+            company: emailData.company,
+            title: emailData.title,
+            phone: emailData.phone,
+            inquiryType: emailData.inquiryType,
+            message: emailData.message,
+            subject: `New ${emailData.inquiryType} from ${emailData.name}`,
+            _replyto: emailData.email
+          })
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          emailSent = result.success;
-          console.log('✅ Supabase email result:', emailSent ? 'SUCCESS' : 'FAILED');
+        console.log('Formspree response status:', formspreeResponse.status);
+        
+        if (formspreeResponse.ok) {
+          const result = await formspreeResponse.json();
+          console.log('Formspree success:', result);
+          emailSent = true;
+        } else {
+          const errorText = await formspreeResponse.text();
+          console.error('Formspree error:', errorText);
         }
-      } catch (error) {
-        console.warn('❌ Supabase email failed:', error);
+      } catch (formspreeError) {
+        console.error('Formspree request failed:', formspreeError);
       }
 
-      // Method 2: Try Formspree as backup
+      // Method 2: Try Netlify Forms as backup
       if (!emailSent) {
         try {
-          console.log('📧 Attempting Formspree backup...');
-          const formspreeResponse = await fetch('https://formspree.io/f/xanydvvp', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: emailData.name,
-              email: emailData.email,
-              company: emailData.company,
-              title: emailData.title,
-              phone: emailData.phone,
-              inquiryType: emailData.inquiryType,
-              message: emailData.message,
-              subject: `New ${emailData.inquiryType} from ${emailData.name}`,
-              _replyto: emailData.email
-            }),
-          });
-
-          emailSent = formspreeResponse.ok;
-          console.log('✅ Formspree result:', emailSent ? 'SUCCESS' : 'FAILED');
-        } catch (error) {
-          console.warn('❌ Formspree failed:', error);
-        }
-      }
-
-      // Method 3: Try Netlify Forms as final backup
-      if (!emailSent) {
-        try {
-          console.log('📧 Attempting Netlify Forms...');
+          console.log('Attempting Netlify Forms...');
           const netlifyFormData = new FormData();
           netlifyFormData.append('form-name', 'contact');
           netlifyFormData.append('name', emailData.name);
@@ -120,48 +148,51 @@ function Contact() {
 
           const netlifyResponse = await fetch('/', {
             method: 'POST',
-            body: netlifyFormData
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(netlifyFormData).toString()
           });
 
-          emailSent = netlifyResponse.ok;
-          console.log('✅ Netlify Forms result:', emailSent ? 'SUCCESS' : 'FAILED');
-        } catch (error) {
-          console.warn('❌ Netlify Forms failed:', error);
+          console.log('Netlify response status:', netlifyResponse.status);
+          
+          if (netlifyResponse.ok) {
+            console.log('Netlify Forms success');
+            emailSent = true;
+          }
+        } catch (netlifyError) {
+          console.error('Netlify Forms failed:', netlifyError);
         }
       }
 
-      // Save to database (secondary priority)
-      try {
-        const { error } = await supabase
-          .from('contacts_wm2025')
-          .insert([
-            {
-              inquiry_type: formData.inquiryType,
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              title: formData.title,
-              company: formData.company,
-              phone: formData.phone,
-              email: formData.email,
-              message: formData.message
-            }
-          ]);
+      // Method 3: Try Supabase Edge Function as last resort
+      if (!emailSent) {
+        try {
+          console.log('Attempting Supabase Edge Function...');
+          const supabaseResponse = await fetch('https://sdfnpskccbvilzpcpzzo.supabase.co/functions/v1/send-contact-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkZm5wc2tjY2J2aWx6cGNwenpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNzUyNjEsImV4cCI6MjA2Njc1MTI2MX0.dkIxMqlYhxNNWbYhiDjelZnLzpdl0OIU84T51hHCXis`
+            },
+            body: JSON.stringify(emailData)
+          });
 
-        if (!error) {
-          console.log('✅ Database save successful');
-        } else {
-          console.warn('⚠️ Database save failed:', error);
+          if (supabaseResponse.ok) {
+            const result = await supabaseResponse.json();
+            console.log('Supabase email success:', result);
+            emailSent = result.success;
+          }
+        } catch (supabaseError) {
+          console.error('Supabase email failed:', supabaseError);
         }
-      } catch (dbError) {
-        console.warn('⚠️ Database error:', dbError);
       }
 
-      // Determine final result
-      if (emailSent) {
-        console.log('🎉 FORM SUBMISSION SUCCESS!');
+      console.log('Final status:', { databaseSaved, emailSent });
+
+      // Show success if either database save or email worked
+      if (databaseSaved || emailSent) {
         setIsSubmitted(true);
         trackFormSubmission('contact_form_success', 'contact_section');
-
+        
         // Reset form
         setFormData({
           inquiryType: '',
@@ -173,18 +204,23 @@ function Contact() {
           email: '',
           message: ''
         });
-
-        // Hide success after 10 seconds
+        
+        // Hide success message after 10 seconds
         setTimeout(() => setIsSubmitted(false), 10000);
-
+        
+        console.log('Form submission successful!');
       } else {
-        console.error('❌ ALL EMAIL METHODS FAILED');
-        setSubmitError('We\'re experiencing technical difficulties. Please email us directly at james@workplacemapping.com or try again in a few minutes.');
+        throw new Error('Both database save and email notification failed');
       }
 
     } catch (error) {
-      console.error('💥 Critical form error:', error);
-      setSubmitError('Connection error. Please check your internet connection and try again.');
+      console.error('Form submission error:', error);
+      setSubmitError(
+        'We\'re experiencing technical difficulties. Please try one of these alternatives:\n\n' +
+        '• Email us directly at james@workplacemapping.com\n' +
+        '• Call to schedule a consultation\n' +
+        '• Try submitting the form again in a few minutes'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -198,25 +234,9 @@ function Contact() {
     trackButtonClick('discovery_call', 'contact_section');
   };
 
-  const handleDiagnosticButtonClick = () => {
-    trackButtonClick('diagnostic_button', 'contact_section');
-  };
-
   const scrollToContact = () => {
     const element = document.getElementById('contact-form');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
   };
 
   const inquiryTypes = [
@@ -234,24 +254,27 @@ function Contact() {
     <section id="contact-form" className="py-20 bg-white" ref={ref}>
       <div className="container mx-auto px-6">
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={inView ? "visible" : "hidden"}
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ staggerChildren: 0.2 }}
         >
           <motion.h2
-            variants={itemVariants}
+            initial={{ opacity: 0, y: 30 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
             className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-8"
           >
             Stop losing critical information in communication gaps
           </motion.h2>
-
-          <motion.div variants={itemVariants} className="text-center mb-16">
+          
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-16"
+          >
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
               <motion.button
-                onClick={() => {
-                  handleDiagnosticButtonClick();
-                  scrollToContact();
-                }}
+                onClick={scrollToContact}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -259,7 +282,7 @@ function Contact() {
                 Get Your 20-Day Diagnostic
                 <SafeIcon icon={FiMail} className="h-5 w-5" />
               </motion.button>
-
+              
               <motion.a
                 href="https://tidycal.com/jamesbrowntv/workplace-mapping-consultation"
                 target="_blank"
@@ -278,9 +301,13 @@ function Contact() {
           <div className="max-w-4xl mx-auto">
             <div className="grid lg:grid-cols-3 gap-12">
               {/* Contact Information */}
-              <motion.div variants={itemVariants} className="lg:col-span-1">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                transition={{ delay: 0.2 }}
+                className="lg:col-span-1"
+              >
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Get In Touch</h3>
-                
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
@@ -293,7 +320,7 @@ function Contact() {
                       </a>
                     </div>
                   </div>
-
+                  
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                       <SafeIcon icon={FiCalendar} className="h-6 w-6" />
@@ -312,7 +339,7 @@ function Contact() {
                     </div>
                   </div>
                 </div>
-
+                
                 <div className="mt-8 p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-2">Response Time</h4>
                   <p className="text-gray-700">We'll respond to your inquiry within 24 hours.</p>
@@ -320,10 +347,16 @@ function Contact() {
               </motion.div>
 
               {/* Contact Form */}
-              <motion.div variants={itemVariants} className="lg:col-span-2">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                transition={{ delay: 0.3 }}
+                className="lg:col-span-2"
+              >
                 <div className="bg-gray-50 rounded-2xl p-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-6">Send us a message</h3>
-
+                  
+                  {/* Success Message */}
                   {isSubmitted && (
                     <motion.div
                       className="mb-6 p-6 bg-green-100 border border-green-300 rounded-lg"
@@ -332,18 +365,15 @@ function Contact() {
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <SafeIcon icon={FiCheckCircle} className="h-8 w-8 text-green-600" />
-                        <span className="text-green-800 font-bold text-lg">
-                          ✅ Message Sent Successfully!
-                        </span>
+                        <span className="text-green-800 font-bold text-lg">✅ Message Sent Successfully!</span>
                       </div>
                       <p className="text-green-700 text-base leading-relaxed">
-                        Thank you for your inquiry! We've received your message and will respond within 24 hours. 
-                        Check your email for a confirmation, and feel free to reach out 
-                        if you have any urgent questions.
+                        Thank you for your inquiry! We've received your message and will respond within 24 hours.
                       </p>
                     </motion.div>
                   )}
 
+                  {/* Error Message */}
                   {submitError && (
                     <motion.div
                       className="mb-6 p-6 bg-red-100 border border-red-300 rounded-lg flex items-start gap-4"
@@ -352,17 +382,13 @@ function Contact() {
                     >
                       <SafeIcon icon={FiAlertCircle} className="h-8 w-8 text-red-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-red-800 font-bold text-lg block mb-2">
-                          ❌ Unable to Send Message
-                        </span>
-                        <p className="text-red-700 text-base leading-relaxed mb-3">
-                          {submitError}
-                        </p>
+                        <span className="text-red-800 font-bold text-lg block mb-2">❌ Unable to Send Message</span>
+                        <p className="text-red-700 text-base leading-relaxed mb-3 whitespace-pre-line">{submitError}</p>
                         <div className="bg-red-50 rounded-lg p-3">
                           <p className="text-red-800 font-medium text-sm mb-2">Alternative Contact Methods:</p>
                           <div className="flex flex-col sm:flex-row gap-3">
-                            <a 
-                              href="mailto:james@workplacemapping.com" 
+                            <a
+                              href="mailto:james@workplacemapping.com?subject=Website Contact Form Inquiry"
                               className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
                             >
                               <SafeIcon icon={FiMail} className="h-4 w-4" />
@@ -383,11 +409,10 @@ function Contact() {
                     </motion.div>
                   )}
 
+                  {/* Contact Form */}
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Inquiry Type *
-                      </label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Inquiry Type *</label>
                       <select
                         name="inquiryType"
                         value={formData.inquiryType}
@@ -404,9 +429,7 @@ function Contact() {
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          First Name *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
                         <input
                           type="text"
                           name="firstName"
@@ -414,12 +437,11 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter your first name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Last Name *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
                         <input
                           type="text"
                           name="lastName"
@@ -427,15 +449,14 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter your last name"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Title *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
                         <input
                           type="text"
                           name="title"
@@ -443,12 +464,11 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Your job title"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Company *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Company *</label>
                         <input
                           type="text"
                           name="company"
@@ -456,15 +476,14 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Your company name"
                         />
                       </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Phone Number *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
                         <input
                           type="tel"
                           name="phone"
@@ -472,12 +491,11 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="(555) 123-4567"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Email *
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
                         <input
                           type="email"
                           name="email"
@@ -485,14 +503,13 @@ function Contact() {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="your@email.com"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Message/Details *
-                      </label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Message/Details *</label>
                       <textarea
                         name="message"
                         value={formData.message}
@@ -508,9 +525,7 @@ function Contact() {
                       type="submit"
                       disabled={isSubmitting}
                       className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center gap-2 ${
-                        isSubmitting
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700'
+                        isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                       } text-white`}
                       whileHover={!isSubmitting ? { scale: 1.02 } : {}}
                       whileTap={!isSubmitting ? { scale: 0.98 } : {}}
@@ -527,7 +542,7 @@ function Contact() {
       </div>
 
       {/* Hidden Netlify form for form detection */}
-      <form name="contact" netlify hidden>
+      <form name="contact" netlify netlify-honeypot="bot-field" hidden>
         <input type="text" name="name" />
         <input type="email" name="email" />
         <input type="text" name="company" />
